@@ -1,0 +1,100 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: JLH
+'Project Start Date: 7/14/2011
+
+'Edited by: Billy Sellers
+'Date: 1/10/2014
+'Changes: updated passed variables to work with all three hooks stated in quote (15755, 15935, 15952)
+
+
+F.ODBC.Connection!conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.Intrinsic.Control.CallSub(Load)
+
+Program.Sub.Main.End
+
+Program.Sub.Load.Start
+F.Intrinsic.Control.SetErrorHandler("Load_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.bRet.Declare(Boolean)
+V.Local.iRet.Declare(Long)
+V.Local.sJob.Declare(String)
+V.Local.sSuffix.Declare(String)
+V.Local.sSeq.Declare(String)
+V.Local.sQuery.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.sParam.Declare(String)
+
+'Set filename for the file that contains the executable path
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","GUI_Launch_exe.txt",V.Local.sFile)
+F.Intrinsic.File.Exists(V.Local.sFile,V.Local.bRet)
+F.Intrinsic.Control.If(V.Local.bRet,=,True)
+
+	'Get the executable path from the file
+	F.Intrinsic.File.File2String(V.Local.sFile,V.Local.sFile)
+	F.Intrinsic.String.InstrRev(V.Local.sFile,".exe",V.Local.iRet)
+	F.Intrinsic.Math.Add(V.Local.iRet,3,V.Local.iRet)
+	F.Intrinsic.String.Mid(V.Local.sfile,1,V.Local.iRet,V.Local.sFile)
+	
+	'Set local variables to passed fields
+	V.Local.sJob.Set(V.passed.009990)
+	V.Local.sSuffix.Set(V.Passed.009991)
+	V.Local.sSeq.Set(V.passed.009992)
+	
+	'Get the part number for the passed job and suffix from the job header table
+	F.Intrinsic.String.concat("Select PART From V_JOB_HEADER Where JOB = '",V.Local.sJob,"' AND SUFFIX = '",V.Local.sSuffix,"'",V.Local.sQuery)
+	F.ODBC.Connection!conx.OpenRecordsetRO("rst",V.Local.sQuery)
+
+	F.Intrinsic.Control.if(V.ODBC.conx!rst.EOF,=,False)
+		V.local.sPart.set(V.ODBC.conx!rst.FieldValTrim!PART)
+	F.Intrinsic.Control.Else
+		V.Local.sPart.Set("")
+	F.Intrinsic.Control.endif
+	F.ODBC.conx!rst.Close
+	
+	'Set Parameter list
+	F.Intrinsic.String.Concat(V.Local.sJob,"|",V.Local.sSuffix,"|",V.Local.sSeq,"|",V.Local.sPart,V.Local.sParam)
+	'Add params to file path
+	F.Intrinsic.String.Concat(V.Local.sFile," ",V.Local.sParam,V.Local.sFile)
+	'Launch executable
+	F.Intrinsic.Task.LaunchAsync(V.Local.sFile,0,V.Local.iRet)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Unload)
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Load_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_3770_Launch_Exe.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Load.End
+
+Program.Sub.Unload.Start
+F.ODBC.Connection!conx.Close
+
+F.Intrinsic.Control.End
+
+Program.Sub.Unload.End
+
+Program.Sub.Comments.Start
+${$0$}$ATG_3770_Launch_Exe$}$JCT$}$4/11/2016
+${$1$}$$}$$}$2$}$15755$}$OLS001-SCAN-POST-HOOK(On-Line GUI)$}$4/11/2016 12:20:29 PM$}$(Program: OLG002; Screen: OLS001)
+
+${$1$}$$}$$}$1$}$15952$}$Post-Start Job Hook$}$4/11/2016 12:18:52 PM$}$(Program: OLG002; Screen: OLS007)
+
+${$1$}$$}$$}$0$}$15935$}$OLS005-PB-START-JOB-POST-HOOK(GUI START JOB BUTTON)$}$4/11/2016 12:18:27 PM$}$(Program: OLG002; Screen: OLS005)
+
+Program.Sub.Comments.End
+
